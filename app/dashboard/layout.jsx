@@ -12,6 +12,7 @@ const NAV = [
   { href: '/dashboard/orders', label: 'Orders', icon: '🔔' },
   { href: '/dashboard/menu', label: 'Menu', icon: '📖' },
   { href: '/dashboard/tables', label: 'Tables & QR', icon: '🪑' },
+  { href: '/dashboard/design', label: 'Design', icon: '🎨' },
   { href: '/dashboard/staff', label: 'Staff', icon: '🧑‍🍳' },
   { href: '/dashboard/settings', label: 'Settings', icon: '⚙️' },
 ];
