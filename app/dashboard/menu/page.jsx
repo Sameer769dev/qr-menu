@@ -235,6 +235,51 @@ function ItemModal({ restaurant, categoryId, item, onClose, onSaved }) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [photoResults, setPhotoResults] = useState(null);
+  const [searching, setSearching] = useState(false);
+
+  async function searchPhotos() {
+    const q = name.trim();
+    if (!q) {
+      setError('Type the item name first, then search photos.');
+      return;
+    }
+    setError('');
+    setSearching(true);
+    setPhotoResults(null);
+    const urls = [];
+    try {
+      const res = await fetch(
+        `https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(q)}`
+      );
+      const data = await res.json();
+      for (const m of data.meals || []) {
+        if (m.strMealThumb) urls.push(m.strMealThumb);
+        if (urls.length >= 8) break;
+      }
+    } catch {
+      // ignore, try fallback below
+    }
+    if (urls.length < 4) {
+      const cats = ['biryani', 'burger', 'butter-chicken', 'dessert', 'dosa', 'idly', 'pasta', 'pizza', 'rice', 'samosa'];
+      const lower = q.toLowerCase();
+      const guess = cats.find((c) => lower.includes(c.replace('-', ' ')) || lower.includes(c)) || null;
+      const fetches = [...Array(4)].map(() =>
+        fetch(
+          guess
+            ? `https://foodish-api.com/api/images/${guess}`
+            : 'https://foodish-api.com/api/'
+        )
+          .then((r) => r.json())
+          .then((d) => d.image)
+          .catch(() => null)
+      );
+      const extra = (await Promise.all(fetches)).filter(Boolean);
+      urls.push(...extra);
+    }
+    setPhotoResults([...new Set(urls)]);
+    setSearching(false);
+  }
 
   async function handleFile(e) {
     const file = e.target.files?.[0];
@@ -338,16 +383,26 @@ function ItemModal({ restaurant, categoryId, item, onClose, onSaved }) {
                 </div>
               )}
               <div className="flex flex-col gap-1.5">
-                <label className="btn-secondary cursor-pointer">
-                  {uploading ? 'Uploading…' : imageUrl ? 'Change photo' : 'Upload photo'}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleFile}
-                    disabled={uploading}
-                  />
-                </label>
+                <div className="flex gap-1.5">
+                  <label className="btn-secondary cursor-pointer">
+                    {uploading ? 'Uploading…' : imageUrl ? 'Change' : 'Upload'}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleFile}
+                      disabled={uploading}
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    disabled={searching}
+                    onClick={searchPhotos}
+                  >
+                    {searching ? 'Searching…' : '🔍 Find photos'}
+                  </button>
+                </div>
                 {imageUrl && (
                   <button
                     type="button"
@@ -359,6 +414,43 @@ function ItemModal({ restaurant, categoryId, item, onClose, onSaved }) {
                 )}
               </div>
             </div>
+
+            {photoResults && (
+              <div className="mt-2">
+                {photoResults.length === 0 ? (
+                  <p className="text-xs text-gray-500">
+                    No stock photos found for “{name}”. Try a simpler dish name
+                    (e.g. “momo” → “dumpling”) or upload your own.
+                  </p>
+                ) : (
+                  <>
+                    <p className="mb-1.5 text-xs text-gray-500">
+                      Free stock photos — tap one to use it:
+                    </p>
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {photoResults.map((url) => (
+                        <button
+                          key={url}
+                          type="button"
+                          onClick={() => setImageUrl(url)}
+                          className={`overflow-hidden rounded-lg border-2 transition-all hover:opacity-90 ${
+                            imageUrl === url ? 'border-brand-500' : 'border-transparent'
+                          }`}
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={url}
+                            alt="Food option"
+                            className="aspect-square w-full object-cover"
+                            loading="lazy"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
             <p className="mt-1.5 text-xs text-gray-400">
               A clear photo in good light. Items with photos sell more.
             </p>
