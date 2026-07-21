@@ -130,7 +130,7 @@ export default function DesignPage() {
       setMessage(`Error: ${error.message}`);
       return;
     }
-    setMessage(`"${MENU_THEMES[key].name}" is now live on your menu ✓`);
+    setMessage(`"${MENU_THEMES[key].label}" is now live on your menu ✓`);
     refreshRestaurant();
   }
 
@@ -177,7 +177,7 @@ export default function DesignPage() {
               <div className="flex items-center justify-between gap-3 border-t border-gray-100 px-5 py-4">
                 <div className="min-w-0">
                   <p className="font-display font-bold">
-                    {theme.emoji} {theme.name}
+                    {theme.emoji} {theme.label}
                     {active && (
                       <span className="ml-2 badge-status bg-brand-50 text-brand-700">Active</span>
                     )}
